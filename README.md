@@ -35,6 +35,6 @@ Code was tested on
 
 ## Usage
 
-We have prepared Jupyter notebooks in the ./notebooks/ folder to demonstrate NTT.
+We have prepared Jupyter notebooks in the ./notebooks/ folder to demonstrate NTT, which you can [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com//github/alexdseo/neural-tangent-transfer/blob/master/notebook/ntt_demo_cnn.ipynb) here for cnn and [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com//github/alexdseo/neural-tangent-transfer/blob/master/notebook/ntt_demo_mlp.ipynb) for mlp.
 
 There are two main python scripts in the folder `nt_transfer`: `ntt.py` and `exploit.py`. The first `ntt.py` script takes care of the **NTT optimization phase**, where we use label-free data to learn the sparse neural network initialization; the second `exploit.py` takes care the **supervised learning phase**, where we perform supervised learning using labeled data.
