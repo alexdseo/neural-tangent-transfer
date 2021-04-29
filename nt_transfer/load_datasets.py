@@ -90,7 +90,7 @@ def read_mnist_data(path_dataset, one_hot=True, STANDARDIZE_BOOL = True, LOAD_TR
     }
     return dataset
 
-def read_cifar_10_data(path_dataset, subdir, STANDARDIZE_BOOL = True):
+def read_cifar_10_data(path_data, subdir, STANDARDIZE_BOOL = True):
     dirname = 'cifar-10-batches-py'
     origin = 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
     path = get_file(dirname, origin=origin, untar=True,
