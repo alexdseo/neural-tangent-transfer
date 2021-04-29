@@ -153,7 +153,9 @@ class nt_transfer_model():
         ker_dist = np.sum(np.square(student_ker_mat - teacher_ker_mat)) / teacher_ker_mat.size
 
         # the normalized squared difference between teacher and student network predictions
-        target_dist = np.sum(np.square(student_pred - teacher_pred)) / student_pred.size
+        target_dist = np.sum(np.square(student_ker_mat - teacher_ker_mat)) / teacher_ker_mat.size
+
+        #np.sum(np.square(student_pred - teacher_pred)) / student_pred.size
 
         # squared norm of parameters
         params_norm_squared = stax_params_l2_square(masked_params)
