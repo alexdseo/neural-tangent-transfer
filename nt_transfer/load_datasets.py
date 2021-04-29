@@ -104,7 +104,7 @@ def read_cifar_10_data(path_dataset, subdir, STANDARDIZE_BOOL = True):
 
     for i in range(1, 6):
         fpath = os.path.join(path, 'databatch' + str(i))
-        (x_train[(i - 1) 10000:i 10000,:,:,:], y_train[(i - 1) 10000: i 10000]) = load_batch(fpath)
+        (x_train[(i - 1) 10000: i 10000,:,:,:], y_train[(i - 1) 10000: i 10000]) = load_batch(fpath)
 
     fpath = os.path.join(path, 'test_batch')
     x_test, y_test = load_batch(fpath)
