@@ -476,7 +476,7 @@ def mean_and_var_across_trials(results_mat):
     return av_results_mat_across_trials, var_results_mat_across_trials
 
 
-def load_supervised_training_result(supervised_result_file, wiring_str, nn_density_list, num_plots = -1, supervised_result_path = '/tungstenfs/scratch/gzenke/liutian/nt_transfer/saved_data/supervised_results/'):
+def load_supervised_training_result(supervised_result_file, wiring_str, nn_density_list, num_plots = -1, supervised_result_path = '/content/neural-tangent-transfer/saved/supervised_results/'):
     result_dict = {}
     final_result_dict = {}
 
