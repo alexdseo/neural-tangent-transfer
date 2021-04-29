@@ -103,7 +103,7 @@ def read_cifar_10_data(path_data, subdir, STANDARDIZE_BOOL = True):
     y_train = onp.empty((num_train_samples,), dtype='uint8')
 
     for i in range(1, 6):
-        fpath = os.path.join(path, 'databatch' + str(i))
+        fpath = os.path.join(path, 'data_batch_' + str(i))
         (x_train[(i - 1)*10000: i*10000,:,:,:], y_train[(i - 1)*10000: i*10000]) = load_batch(fpath)
 
     fpath = os.path.join(path, 'test_batch')
@@ -120,8 +120,8 @@ def read_cifar_10_data(path_data, subdir, STANDARDIZE_BOOL = True):
     y_test = y_test.astype(y_train.dtype)
     
     # Pre-processing (normalize)
-    train_images = onp.divide(train_images, 255, dtype=onp.float32)
-    test_images = onp.divide(test_images, 255, dtype=onp.float32)
+    train_images = onp.divide(x_train, 255, dtype=onp.float32)
+    test_images = onp.divide(x_test, 255, dtype=onp.float32)
 
     train_labels = dense_to_one_hot(y_train, num_classes=10)
     test_labels = dense_to_one_hot(y_test, num_classes=10)
