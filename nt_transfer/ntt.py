@@ -128,8 +128,8 @@ class nt_transfer_model():
 
         # split validation inputs into two collections, vali_inputs_1 and vali_inputs_2.
         half_vali_size = int(len(self.vali_samples)/2)
-        self.vali_inputs_1 = np.array(self.vali_samples[:half_vali_size])
-        self.vali_inputs_2 = np.array(self.vali_samples[half_vali_size:])
+        self.vali_inputs_1 = self.vali_samples[:half_vali_size]
+        self.vali_inputs_2 = self.vali_samples[half_vali_size:]
 
 
     def kernel_dist_target_dist_l2_loss(self, student_ker_mat, student_pred, teacher_ker_mat, teacher_pred, masked_params):
@@ -150,10 +150,10 @@ class nt_transfer_model():
         """ 
         
         # the normalized squared difference between teacher and student NTK matrices
-        ker_dist = np.sum(np.square(student_ker_mat - teacher_ker_mat)) / teacher_ker_mat.size
+        ker_dist = np.sum(np.square(np.array(student_ker_mat - teacher_ker_mat))) / teacher_ker_mat.size
 
         # the normalized squared difference between teacher and student network predictions
-        target_dist = np.sum(np.square(student_pred - teacher_pred)) / student_pred.size
+        target_dist = np.sum(np.square(np.array(student_pred - teacher_pred))) / student_pred.size
 
         # squared norm of parameters
         params_norm_squared = stax_params_l2_square(masked_params)
@@ -215,8 +215,8 @@ class nt_transfer_model():
         masked_student_net_params = get_sparse_params_filtered_by_masks(student_net_params, masks)
 
         # split inputs into two collections, x1 and x2.
-        x1 = np.array(x[:int(len(x)/2)])
-        x2 = np.array(x[int(len(x)/2):])
+        x1 = x[:int(len(x)/2)]
+        x2 = x[int(len(x)/2):]
         
         # student network prediction
         student_prediction = self.apply_fn(masked_student_net_params, x) 
