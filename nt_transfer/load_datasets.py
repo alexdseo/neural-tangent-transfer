@@ -90,48 +90,42 @@ def read_mnist_data(path_dataset, one_hot=True, STANDARDIZE_BOOL = True, LOAD_TR
     }
     return dataset
 
-def read_cifar_10_data(path_dataset, STANDARDIZE_BOOL = True):
-    # train batch
-    train_batch = {}
-    for i in range(5):
-        filename = os.path.join(path_dataset, 'data_batch_{}'.format(i+1))
-        with open(filename, 'rb') as f:
-            try:
-                batch = pickle.load(f, encoding='bytes')
-            except TypeError:
-                batch = pickle.load(f) # for python 2
-            for key in batch.keys():
-                train_batch.setdefault(key, []).extend(batch[key])
-    train_batch = {k: onp.stack(v, 0) for k, v in train_batch.items()} # stack into one batch
+def read_cifar_10_data(path_dataset, subdir, STANDARDIZE_BOOL = True):
+    dirname = 'cifar-10-batches-py'
+    origin = 'https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz'
+    path = get_file(dirname, origin=origin, untar=True,
+                    file_hash='6d958be074577803d12ecdefd02955f39262c83c16fe9348329d7fe0b5c001ce', cache_dir=path_data,
+                    cache_subdir=subdir)
 
-    # test batch
-    filename = os.path.join(path_dataset, 'test_batch')
-    with open(filename, 'rb') as f:
-        try:
-            test_batch = pickle.load(f, encoding='bytes')
-        except TypeError:
-            test_batch = pickle.load(f)
+    num_train_samples = 50000
 
-    # Reshape images: (n, 3072) -> (n, 32, 32, 3)
-    label_key = 'labels'.encode('utf-8')
-    train_images = onp.transpose(
-        onp.reshape(train_batch['data'.encode('utf-8')], [-1, 3, 32, 32]), [0,2,3,1])
-    train_labels = onp.asarray(train_batch[label_key])
-    train_labels = dense_to_one_hot(train_labels)
-    
-    
-    
-    test_images = onp.transpose(
-        onp.reshape(test_batch['data'.encode('utf-8')], [-1, 3, 32, 32]), [0,2,3,1])
-    test_labels = onp.asarray(test_batch[label_key])
-    test_labels = dense_to_one_hot(test_labels)
-    
-    
+    x_train = np.empty((num_train_samples, 3, 32, 32), dtype='uint8')
+    y_train = np.empty((num_train_samples,), dtype='uint8')
 
+    for i in range(1, 6):
+        fpath = os.path.join(path, 'databatch' + str(i))
+        (x_train[(i - 1) 10000:i 10000,:,:,:], y_train[(i - 1) 10000: i 10000]) = load_batch(fpath)
+
+    fpath = os.path.join(path, 'test_batch')
+    x_test, y_test = load_batch(fpath)
+
+    y_train = np.reshape(y_train, (len(y_train), 1))
+    y_test = np.reshape(y_test, (len(y_test), 1))
+
+    if K.image_data_format() == 'channels_last':
+        x_train = x_train.transpose(0, 2, 3, 1)
+        x_test = x_test.transpose(0, 2, 3, 1)
+
+    x_test = x_test.astype(x_train.dtype)
+    y_test = y_test.astype(y_train.dtype)
+    
     # Pre-processing (normalize)
     train_images = onp.divide(train_images, 255, dtype=onp.float32)
     test_images = onp.divide(test_images, 255, dtype=onp.float32)
-    
+
+    train_labels = dense_to_one_hot(y_train, num_classes=10)
+    test_labels = dense_to_one_hot(y_test, num_classes=10)
+
     if STANDARDIZE_BOOL: 
         channel_mean = onp.mean(train_images, axis=(0,1,2), dtype=onp.float32, keepdims=True)
         channel_std = onp.std(train_images, axis=(0,1,2), dtype=onp.float32, keepdims=True)
@@ -323,7 +317,7 @@ class Dataset(object):
             self.dataset = read_mnist_data(os.path.join(self.path_data, 'fashion_mnist_dataset'), STANDARDIZE_BOOL = STANDARDIZE_BOOL, LOAD_TRAIN_PORTION = LOAD_TRAIN_PORTION)
         elif self.datasource == 'cifar-10':
             self.num_classes = 10
-            self.dataset = read_cifar_10_data(os.path.join(self.path_data, 'cifar_10_dataset/cifar-10-batches-py'), STANDARDIZE_BOOL = STANDARDIZE_BOOL )
+            self.dataset = read_cifar_10_data(self.path_data, 'cifar_10_dataset',  STANDARDIZE_BOOL = STANDARDIZE_BOOL )
         elif self.datasource == 'cifar-100':
             self.dataset = read_cifar_100_data(self.path_data, 'cifar_100_dataset',  STANDARDIZE_BOOL = STANDARDIZE_BOOL )
         elif self.datasource == 'svhn':
