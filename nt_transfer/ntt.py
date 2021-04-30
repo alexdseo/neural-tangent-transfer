@@ -150,10 +150,10 @@ class nt_transfer_model():
         """ 
         
         # the normalized squared difference between teacher and student NTK matrices
-        ker_dist = np.square(student_ker_mat - teacher_ker_mat) / teacher_ker_mat.size
+        ker_dist = np.sum(np.square(student_ker_mat - teacher_ker_mat)) / teacher_ker_mat.size
 
         # the normalized squared difference between teacher and student network predictions
-        target_dist = np.square(student_pred - teacher_pred) / student_pred.size
+        target_dist = np.sum(np.square(student_pred - teacher_pred)) / student_pred.size
 
         # squared norm of parameters
         params_norm_squared = stax_params_l2_square(masked_params)
@@ -191,8 +191,9 @@ class nt_transfer_model():
         weighted_parameters_squared_norm = (self.LAMBDA_L2_REG / density_level) * param_squared_norm 
 
         transfer_loss = weighted_ker_dist +  target_dist + weighted_parameters_squared_norm
+        #, ker_dist, target_dist, param_squared_norm
 
-        return transfer_loss, ker_dist, target_dist, param_squared_norm
+        return transfer_loss
 
 
     def nt_transfer_loss(self, student_net_params, masks, teacher_net_params, x, density_level):
