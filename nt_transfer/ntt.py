@@ -191,9 +191,8 @@ class nt_transfer_model():
         weighted_parameters_squared_norm = (self.LAMBDA_L2_REG / density_level) * param_squared_norm 
 
         transfer_loss = weighted_ker_dist +  target_dist + weighted_parameters_squared_norm
-        #, ker_dist, target_dist, param_squared_norm
 
-        return transfer_loss
+        return transfer_loss, ker_dist, target_dist, param_squared_norm
 
 
     def nt_transfer_loss(self, student_net_params, masks, teacher_net_params, x, density_level):
