@@ -324,9 +324,9 @@ class nt_transfer_model():
                 _, teacher_net_params = self.init_fun(random.PRNGKey(run_index), tuple(self.batch_input_shape))
                                 
                 # the prediction of the teacher net evaluated on validation samples
-                vali_teacher_prediction = self.apply_fn(teacher_net_params, self.vali_samples)
+                vali_teacher_prediction = np.array(self.apply_fn(teacher_net_params, self.vali_samples))
 
-                vali_teacher_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, teacher_net_params) 
+                vali_teacher_ntk_mat = np.array(self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, teacher_net_params))
 
                 # the initial binary mask
                 
