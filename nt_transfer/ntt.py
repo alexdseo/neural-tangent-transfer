@@ -177,10 +177,10 @@ class nt_transfer_model():
         """
         
         # evaluate the student ntk matrix using validation data.
-        vali_student_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, masked_student_net_params)   
+        vali_student_ntk_mat = np.array(self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, masked_student_net_params))
 
         # evaluate the student prediction using validation data.        
-        vali_student_prediction = self.apply_fn(masked_student_net_params, self.vali_samples) 
+        vali_student_prediction = np.array(self.apply_fn(masked_student_net_params, self.vali_samples))
 
         # calculate the kernel distance, target distance, and parameter l2 loss
         ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(vali_student_ntk_mat, vali_student_prediction, vali_teacher_ntk_mat, vali_teacher_prediction, masked_student_net_params )
