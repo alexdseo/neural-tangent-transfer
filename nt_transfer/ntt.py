@@ -219,16 +219,16 @@ class nt_transfer_model():
         x2 = x[int(len(x)/2):]
         
         # student network prediction
-        student_prediction = self.apply_fn(masked_student_net_params, x) 
+        student_prediction = np.array(self.apply_fn(masked_student_net_params, x))
         
         # teacher network prediction
-        teacher_prediction = self.apply_fn(teacher_net_params, x)
+        teacher_prediction = np.array(self.apply_fn(teacher_net_params, x))
 
         # student network's NTK evaluated on x1 and x2
-        student_ntk_mat = self.emp_ntk_fn(x1, x2, masked_student_net_params)   
+        student_ntk_mat = np.array(self.emp_ntk_fn(x1, x2, masked_student_net_params))
 
         # teacher network's NTK evaluated on x1 and x2
-        teacher_ntk_mat = self.emp_ntk_fn(x1, x2, teacher_net_params)            
+        teacher_ntk_mat = np.array(self.emp_ntk_fn(x1, x2, teacher_net_params))
 
         # compute kernel, target, and paramter l2 loss
         ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(student_ntk_mat, student_prediction, teacher_ntk_mat, teacher_prediction, masked_student_net_params)
