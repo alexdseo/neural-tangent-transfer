@@ -177,10 +177,10 @@ class nt_transfer_model():
         """
         
         # evaluate the student ntk matrix using validation data.
-        vali_student_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, masked_student_net_params)
+        vali_student_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, masked_student_net_params, rng=random.PRNGKey(run_index))
 
         # evaluate the student prediction using validation data.        
-        vali_student_prediction = self.apply_fn(masked_student_net_params, self.vali_samples)
+        vali_student_prediction = self.apply_fn(masked_student_net_params, self.vali_samples, rng=random.PRNGKey(run_index))
 
         # calculate the kernel distance, target distance, and parameter l2 loss
         ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(vali_student_ntk_mat, vali_student_prediction, vali_teacher_ntk_mat, vali_teacher_prediction, masked_student_net_params )
@@ -219,16 +219,16 @@ class nt_transfer_model():
         x2 = x[int(len(x)/2):]
         
         # student network prediction
-        student_prediction = self.apply_fn(masked_student_net_params, x)
+        student_prediction = self.apply_fn(masked_student_net_params, x, rng=random.PRNGKey(run_index))
         
         # teacher network prediction
-        teacher_prediction = self.apply_fn(teacher_net_params, x)
+        teacher_prediction = self.apply_fn(teacher_net_params, x, rng=random.PRNGKey(run_index))
 
         # student network's NTK evaluated on x1 and x2
-        student_ntk_mat = self.emp_ntk_fn(x1, x2, masked_student_net_params)
+        student_ntk_mat = self.emp_ntk_fn(x1, x2, masked_student_net_params, rng=random.PRNGKey(run_index))
 
         # teacher network's NTK evaluated on x1 and x2
-        teacher_ntk_mat = self.emp_ntk_fn(x1, x2, teacher_net_params)
+        teacher_ntk_mat = self.emp_ntk_fn(x1, x2, teacher_net_params, rng=random.PRNGKey(run_index))
 
         # compute kernel, target, and paramter l2 loss
         ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(student_ntk_mat, student_prediction, teacher_ntk_mat, teacher_prediction, masked_student_net_params)
@@ -324,9 +324,9 @@ class nt_transfer_model():
                 _, teacher_net_params = self.init_fun(random.PRNGKey(run_index), tuple(self.batch_input_shape))
                                 
                 # the prediction of the teacher net evaluated on validation samples
-                vali_teacher_prediction = self.apply_fn(teacher_net_params, self.vali_samples)
+                vali_teacher_prediction = self.apply_fn(teacher_net_params, self.vali_samples, rng=random.PRNGKey(run_index))
 
-                vali_teacher_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, teacher_net_params)
+                vali_teacher_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, teacher_net_params, rng=random.PRNGKey(run_index))
 
                 # the initial binary mask
                 

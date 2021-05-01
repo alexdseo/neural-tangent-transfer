@@ -9,6 +9,84 @@ def gen_mlp_lenet(output_units = 10, W_initializers_str = 'glorot_normal()', b_i
     stax.Dense(100, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
     stax.Dense(output_units, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)))
 
+def gen_bann(output_units = 10, first_layer_width = 5, second_layer_width = 20, W_initializers_str = 'glorot_normal()', b_initializers_str = 'normal()'):
+    """ This is a modern variant of the lenet with relu activation """
+    CSB = stax.serial(
+        stax.FanOut(10),
+        stax.parallel(
+            stax.serial(
+                stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dense(second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dropout(rate = 0.9)
+            ),
+            stax.serial(
+                stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dense(2 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dropout(rate = 0.9)
+            ),
+            stax.serial(
+                stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dense(3 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dropout(rate = 0.9)
+            ),
+            stax.serial(
+                stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dense(4 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dropout(rate = 0.9)
+            ),
+            stax.serial(
+                stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dense(5 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dropout(rate = 0.9)
+            ),
+            stax.serial(
+                stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dense(6 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dropout(rate = 0.9)
+            ),
+            stax.serial(
+                stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dense(7 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dropout(rate = 0.9)
+            ),
+            stax.serial(
+                stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dense(8 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dropout(rate = 0.9)
+            ),
+            stax.serial(
+                stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dense(9 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dropout(rate = 0.9)
+            ),
+            stax.serial(
+                stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dense(10 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
+                stax.Dropout(rate = 0.9)
+            )
+        ),
+        stax.FanInConcat()
+    )
+
+    Additive = stax.serial(
+        stax.FanOut(2),
+        stax.parallel(
+            stax.serial(
+                CSB,
+                stax.Dropout(rate = 0.9)
+            ),
+            stax.serial(
+                CSB,
+                stax.Dropout(rate = 0.9)
+            )
+        ),
+        stax.FanInConcat()
+    )
+
+    return stax.serial(
+    Additive,
+    stax.Dense(output_units, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)))
+
 def gen_mlp_lenet_binary(W_initializers_str = 'glorot_normal()', b_initializers_str = 'normal()'):
     """ This is a modern variant of the lenet with relu activation """
     return stax.serial(
@@ -86,6 +164,7 @@ def gen_cnn_conv4_dropout(mode = 'test', W_initializers_str = 'glorot_normal()',
 def gen_model_dict():
     model_dict = {}
     model_dict['mlp_lenet_binary'] = gen_mlp_lenet_binary
+    model_dict['bann'] = gen_bann
     model_dict['cnn_lenet_caffe_binary'] = gen_cnn_lenet_caffe_binary
     model_dict['cnn_conv4'] = gen_cnn_conv4
     model_dict['mlp_lenet'] = gen_mlp_lenet
