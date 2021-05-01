@@ -177,7 +177,7 @@ class nt_transfer_model():
         """
         
         # evaluate the student ntk matrix using validation data.
-        vali_student_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, masked_student_net_params, key=random.PRNGKey(run_index))
+        vali_student_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, masked_student_net_params, keys=random.PRNGKey(run_index))
 
         # evaluate the student prediction using validation data.        
         vali_student_prediction = self.apply_fn(masked_student_net_params, self.vali_samples, rng=random.PRNGKey(run_index))
@@ -225,10 +225,10 @@ class nt_transfer_model():
         teacher_prediction = self.apply_fn(teacher_net_params, x, rng=random.PRNGKey(run_index))
 
         # student network's NTK evaluated on x1 and x2
-        student_ntk_mat = self.emp_ntk_fn(x1, x2, masked_student_net_params, key=random.PRNGKey(run_index))
+        student_ntk_mat = self.emp_ntk_fn(x1, x2, masked_student_net_params, keys=random.PRNGKey(run_index))
 
         # teacher network's NTK evaluated on x1 and x2
-        teacher_ntk_mat = self.emp_ntk_fn(x1, x2, teacher_net_params, key=random.PRNGKey(run_index))
+        teacher_ntk_mat = self.emp_ntk_fn(x1, x2, teacher_net_params, keys=random.PRNGKey(run_index))
 
         # compute kernel, target, and paramter l2 loss
         ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(student_ntk_mat, student_prediction, teacher_ntk_mat, teacher_prediction, masked_student_net_params)
@@ -326,7 +326,7 @@ class nt_transfer_model():
                 # the prediction of the teacher net evaluated on validation samples
                 vali_teacher_prediction = self.apply_fn(teacher_net_params, self.vali_samples, rng=random.PRNGKey(run_index))
 
-                vali_teacher_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, teacher_net_params, key=random.PRNGKey(run_index))
+                vali_teacher_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, teacher_net_params, keys=random.PRNGKey(run_index))
 
                 # the initial binary mask
                 
