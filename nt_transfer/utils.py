@@ -223,6 +223,7 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
                             print(len(params[layer_index][subNN][block]))
                             raise NotImplementedError
                     masks.append(masks)
+                masks.append(masks)
 
     return masks
 
@@ -287,6 +288,7 @@ def get_sparse_params_filtered_by_masks(params, masks):
                             print(len(params[layer_index][subNN][block]))
                             raise NotImplementedError
                     sparse_parmas.append(sparse_params)
+                sparse_parmas.append(sparse_params)
 
     return sparse_params
 
