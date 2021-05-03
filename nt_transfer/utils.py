@@ -318,10 +318,20 @@ def stax_params_l2_square(params, mask = None, regularize_bias_bool = False):
     """         
     if (type(regularize_bias_bool) != bool):
         raise ValueError("regularize_bias_bool should be a boolean variable")        
-    
+
+    list_params=[]
+
     if regularize_bias_bool == False:
         # assemble a list of weight parmeters; discard bias parameters
-        list_params = [layer_param[0] for layer_param in params if len(layer_param) == 2 ]
+        for layer_param in range(len(params)):
+            if len(params[layer_param]) == 2:
+                list_params += [params[layer_param][0]]
+            elif len(params[layer_param]) > 2:
+                for subNN in range(len(params[layer_param])):
+                    for block in range(len(params[layer_param][subNN])):
+                        for sub_lay in range(len(params[layer_param][subNN][block])):
+                            if len(params[layer_param][subNN][block][sub_lay]) == 2:
+                                list_params += [params[layer_param][subNN][block][sub_lay][0]]
     else:
         # remove the empty tuple from the list of paramters.
         list_params = list(sum(params, ()))
