@@ -165,7 +165,7 @@ def gen_cnn_conv4_dropout(mode = 'test', W_initializers_str = 'glorot_normal()',
 def gen_model_dict():
     model_dict = {}
     model_dict['mlp_lenet_binary'] = gen_mlp_lenet_binary
-    model_dict['bann'] = gen_bann
+    model_dict['bann_dropout'] = gen_bann
     model_dict['cnn_lenet_caffe_binary'] = gen_cnn_lenet_caffe_binary
     model_dict['cnn_conv4'] = gen_cnn_conv4
     model_dict['mlp_lenet'] = gen_mlp_lenet
