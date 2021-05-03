@@ -193,7 +193,7 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
                     for sub_layer in range( len(params[layer_index][subNN][block])):
                         if len(params[layer_index][subNN][block][sub_layer]) < 2:
                             # In this the case, the layer does not contain weight and bias parameters.
-                            masks.append( [] )
+                            layer_masks.append( [] )
 
                         elif len(params[layer_index][subNN][block][sub_layer]) == 2:
                             # In this case, the layer contains a tuple of parameters for weights and biases
@@ -243,7 +243,7 @@ def get_sparse_params_filtered_by_masks(params, masks):
     Returns:
         sparse_params: sparse parameters acquired by passing params through the binay masks. 
     """ 
-        
+
     sparse_params = []
     sub_sparse_params = []
 
@@ -258,7 +258,7 @@ def get_sparse_params_filtered_by_masks(params, masks):
 
             biases = params[layer_index][1]
 
-            mask_this_layer = masks[-layer_index]
+            mask_this_layer = masks[layer_index]
 
             # sparse weights gated by masks
             sparse_weights = np.multiply(mask_this_layer, weights)
@@ -275,7 +275,7 @@ def get_sparse_params_filtered_by_masks(params, masks):
                     for sub_layer in range( len(params[layer_index][subNN][block])):
                         if len(params[layer_index][subNN][block][sub_layer]) < 2:
                             # In this the case, the layer does not contain weight or bias parameters
-                            sparse_params.append( () )
+                            layer_sparse_params.append( () )
 
                         elif len(params[layer_index][subNN][block][sub_layer]) == 2:
                             # In this case, the layer contains a tuple of parameters for weights and biases
@@ -285,7 +285,7 @@ def get_sparse_params_filtered_by_masks(params, masks):
 
                             #print(np.shape(masks))
 
-                            mask_this_layer = np.array(masks[layer_index + subNN + block + sub_layer])
+                            mask_this_layer = masks[layer_index][subNN][block][sub_layer]
 
                             #print(len(mask_this_layer))
                             # sparse weights gated by masks
