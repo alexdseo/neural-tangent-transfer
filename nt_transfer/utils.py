@@ -146,9 +146,7 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
         raise ValueError("magnitude_base_bool and global_bool should be boolean variables")
     
     masks = []
-    #sub_masks=[]
-    #block_masks=[]
-    #layer_masks=[]
+    sub_masks=[]
     
     if global_bool:
         weight_magnitudes_pooled = np.concatenate([ np.abs(layer_params[0].flatten()) for layer_params in params if len(layer_params) > 1])
@@ -189,7 +187,9 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
 
         else:
             for subNN in range(len(params[layer_index])):
+                block_masks = []
                 for block in range( len(params[layer_index][subNN])):
+                    layer_masks = []
                     for sub_layer in range( len(params[layer_index][subNN][block])):
                         if len(params[layer_index][subNN][block][sub_layer]) < 2:
                             # In this the case, the layer does not contain weight and bias parameters.
@@ -220,14 +220,14 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
                                     # in the case of random pruning: randomly shuffle the mask
                                     this_mask = random.shuffle(random.PRNGKey(0), this_mask )
 
-                            masks.append(this_mask )
+                            layer_masks.append(this_mask )
 
                         else:
                             print(len(params[layer_index][subNN][block][sub_layer]))
                             raise NotImplementedError
-                    masks.append(masks)
-                masks.append(masks)
-            masks.append(masks)
+                    block_masks.append(layer_masks)
+                sub_masks.append(block_masks)
+            masks.append(sub_masks)
 
     return masks
 
@@ -246,8 +246,6 @@ def get_sparse_params_filtered_by_masks(params, masks):
         
     sparse_params = []
     sub_sparse_params = []
-    block_sparse_params = []
-    layer_sparse_params = []
 
     for layer_index in range(len(params)):
         if len(params[layer_index]) < 2:
@@ -271,7 +269,9 @@ def get_sparse_params_filtered_by_masks(params, masks):
             sparse_params.append(sparse_params_this_layer)
         else:
             for subNN in range(len(params[layer_index])):
+                block_sparse_params = []
                 for block in range( len(params[layer_index][subNN])):
+                    layer_sparse_params = []
                     for sub_layer in range( len(params[layer_index][subNN][block])):
                         if len(params[layer_index][subNN][block][sub_layer]) < 2:
                             # In this the case, the layer does not contain weight or bias parameters
