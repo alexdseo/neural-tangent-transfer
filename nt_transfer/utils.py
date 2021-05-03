@@ -153,42 +153,41 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
         global_thres = np.sort(weight_magnitudes_pooled)[idx]
     
     for subNN in range(len(params)):
-        for layers in range(len(params[subNN])):
-            for layer_index in range( len(params[subNN][layers])):
-                if len(params[subNN][layers][layer_index]) < 2:
-                    # In this the case, the layer does not contain weight and bias parameters.
-                    masks.append( [] )
+        for layer_index in range( len(params[subNN])):
+            if len(params[subNN][layer_index]) < 2:
+                # In this the case, the layer does not contain weight and bias parameters.
+                masks.append( [] )
 
-                elif len(params[subNN][layers][layer_index]) == 3:
-                    # In this case, the layer contains a tuple of parameters for weights and biases
+            elif len(params[subNN][layer_index]) == 10:
+                # In this case, the layer contains a tuple of parameters for weights and biases
 
-                    print(len(params))
-                    weights = params[subNN][layers][layer_index][0]
+                print(len(params))
+                weights = params[subNN][layer_index][0]
 
-                    weight_magnitudes = np.abs(weights)
+                weight_magnitudes = np.abs(weights)
 
-                    if global_bool and magnitude_base_bool:
+                if global_bool and magnitude_base_bool:
 
-                        this_mask = np.float32(weight_magnitudes > global_thres)
-
-                    else:
-                        # index: number of pruned parameters
-                        idx = int( (1 - nn_density_level) * np.size(weights) )
-
-                        # threshold: entries which below the thredhold will be removed
-                        thres = np.sort(np.reshape(weight_magnitudes, [-1] ))[idx]
-
-                        # 0 selected for weight parameters with magnitudes smaller than the threshold, 1 otherwise
-                        this_mask = np.float32(weight_magnitudes > thres)
-
-                        if magnitude_base_bool == False:
-                            # in the case of random pruning: randomly shuffle the mask
-                            this_mask = random.shuffle(random.PRNGKey(0), this_mask )
-
-                    masks.append(this_mask )
+                    this_mask = np.float32(weight_magnitudes > global_thres)
 
                 else:
-                    raise NotImplementedError
+                    # index: number of pruned parameters
+                    idx = int( (1 - nn_density_level) * np.size(weights) )
+
+                    # threshold: entries which below the thredhold will be removed
+                    thres = np.sort(np.reshape(weight_magnitudes, [-1] ))[idx]
+
+                    # 0 selected for weight parameters with magnitudes smaller than the threshold, 1 otherwise
+                    this_mask = np.float32(weight_magnitudes > thres)
+
+                    if magnitude_base_bool == False:
+                        # in the case of random pruning: randomly shuffle the mask
+                        this_mask = random.shuffle(random.PRNGKey(0), this_mask )
+
+                masks.append(this_mask )
+
+            else:
+                raise NotImplementedError
         masks.append(masks)
 
     return masks
