@@ -159,9 +159,10 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
                     # In this the case, the layer does not contain weight and bias parameters.
                     masks.append( [] )
 
-                elif len(params[subNN][layers][layer_index]) == 2:
+                elif len(params[subNN][layers][layer_index]) == 3:
                     # In this case, the layer contains a tuple of parameters for weights and biases
 
+                    print(len(params))
                     weights = params[subNN][layers][layer_index][0]
 
                     weight_magnitudes = np.abs(weights)
