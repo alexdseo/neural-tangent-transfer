@@ -152,43 +152,75 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
         idx = int( (1 - nn_density_level) * np.size(weight_magnitudes_pooled) )
         global_thres = np.sort(weight_magnitudes_pooled)[idx]
     
-    for subNN in range(len(params)):
-        print(len(params))
-        for layer_index in range( len(params[subNN])):
-            if len(params[subNN][layer_index]) < 2:
-                # In this the case, the layer does not contain weight and bias parameters.
-                masks.append( [] )
+    for layer_index in range(len(params)):
+        if len(params[layer_index]) < 2:
+            # In this the case, the layer does not contain weight and bias parameters.
+            masks.append([])
 
-            elif len(params[subNN][layer_index]) == 10:
-                # In this case, the layer contains a tuple of parameters for weights and biases
+        elif len(params[layer_index]) == 2:
+            # In this case, the layer contains a tuple of parameters for weights and biases
 
-                weights = params[subNN][layer_index][0]
+            weights = params[layer_index][0]
 
-                weight_magnitudes = np.abs(weights)
+            weight_magnitudes = np.abs(weights)
 
-                if global_bool and magnitude_base_bool:
+            if global_bool and magnitude_base_bool:
 
-                    this_mask = np.float32(weight_magnitudes > global_thres)
-
-                else:
-                    # index: number of pruned parameters
-                    idx = int( (1 - nn_density_level) * np.size(weights) )
-
-                    # threshold: entries which below the thredhold will be removed
-                    thres = np.sort(np.reshape(weight_magnitudes, [-1] ))[idx]
-
-                    # 0 selected for weight parameters with magnitudes smaller than the threshold, 1 otherwise
-                    this_mask = np.float32(weight_magnitudes > thres)
-
-                    if magnitude_base_bool == False:
-                        # in the case of random pruning: randomly shuffle the mask
-                        this_mask = random.shuffle(random.PRNGKey(0), this_mask )
-
-                masks.append(this_mask )
+                this_mask = np.float32(weight_magnitudes > global_thres)
 
             else:
-                raise NotImplementedError
-        masks.append(masks)
+                # index: number of pruned parameters
+                idx = int((1 - nn_density_level) * np.size(weights))
+
+                # threshold: entries which below the thredhold will be removed
+                thres = np.sort(np.reshape(weight_magnitudes, [-1]))[idx]
+
+                # 0 selected for weight parameters with magnitudes smaller than the threshold, 1 otherwise
+                this_mask = np.float32(weight_magnitudes > thres)
+
+                if magnitude_base_bool == False:
+                    # in the case of random pruning: randomly shuffle the mask
+                    this_mask = random.shuffle(random.PRNGKey(0), this_mask)
+
+            masks.append(this_mask)
+
+        else:
+            for subNN in range(len(params[layer_index])):
+                for block in range( len(params[layer_index][subNN])):
+                    if len(params[layer_index][subNN][block]) < 2:
+                        # In this the case, the layer does not contain weight and bias parameters.
+                        masks.append( [] )
+
+                    elif len(params[layer_index][subNN][block]) == 2:
+                        # In this case, the layer contains a tuple of parameters for weights and biases
+
+                        weights = params[layer_index][subNN][block][0]
+
+                        weight_magnitudes = np.abs(weights)
+
+                        if global_bool and magnitude_base_bool:
+
+                            this_mask = np.float32(weight_magnitudes > global_thres)
+
+                        else:
+                            # index: number of pruned parameters
+                            idx = int( (1 - nn_density_level) * np.size(weights) )
+
+                            # threshold: entries which below the thredhold will be removed
+                            thres = np.sort(np.reshape(weight_magnitudes, [-1] ))[idx]
+
+                            # 0 selected for weight parameters with magnitudes smaller than the threshold, 1 otherwise
+                            this_mask = np.float32(weight_magnitudes > thres)
+
+                            if magnitude_base_bool == False:
+                                # in the case of random pruning: randomly shuffle the mask
+                                this_mask = random.shuffle(random.PRNGKey(0), this_mask )
+
+                        masks.append(this_mask )
+
+                    else:
+                        raise NotImplementedError
+                masks.append(masks)
 
     return masks
 
@@ -206,30 +238,51 @@ def get_sparse_params_filtered_by_masks(params, masks):
     """ 
         
     sparse_params = []
-    for subNN in range(len(params)):
-        for layer_index in range( len(params[subNN])):
-            if len(params[layer_index]) < 2:
-                # In this the case, the layer does not contain weight or bias parameters
-                sparse_params.append( () )
-            
-            elif len(params[subNN][layer_index]) == 2:
-                # In this case, the layer contains a tuple of parameters for weights and biases
-                weights  = params[subNN][layer_index][0]
-            
-                biases = params[subNN][layer_index][1]
-            
-                mask_this_layer = masks[subNN][layer_index]
-            
-                # sparse weights gated by masks
-                sparse_weights = np.multiply(mask_this_layer, weights )
-            
-                # weight-bias tuple
-                sparse_params_this_layer = (sparse_weights, biases )
-            
-                sparse_params.append( sparse_params_this_layer )
-            else:
-                raise NotImplementedError
-        sparse_parmas.append(sparse_params)
+    for layer_index in range(len(params)):
+        if len(params[layer_index]) < 2:
+            # In this the case, the layer does not contain weight or bias parameters
+            sparse_params.append(())
+
+        elif len(params[layer_index]) == 2:
+            # In this case, the layer contains a tuple of parameters for weights and biases
+            weights = params[layer_index][0]
+
+            biases = params[layer_index][1]
+
+            mask_this_layer = masks[layer_index]
+
+            # sparse weights gated by masks
+            sparse_weights = np.multiply(mask_this_layer, weights)
+
+            # weight-bias tuple
+            sparse_params_this_layer = (sparse_weights, biases)
+
+            sparse_params.append(sparse_params_this_layer)
+        else:
+            for subNN in range(len(params[layer_index])):
+                for block in range( len(params[layer_index][subNN])):
+                    if len(params[layer_index][subNN][block]) < 2:
+                        # In this the case, the layer does not contain weight or bias parameters
+                        sparse_params.append( () )
+
+                    elif len(params[layer_index][subNN][block]) == 2:
+                        # In this case, the layer contains a tuple of parameters for weights and biases
+                        weights  = params[layer_index][subNN][block][0]
+
+                        biases = params[layer_index][subNN][block][1]
+
+                        mask_this_layer = masks[layer_index][subNN][block]
+
+                        # sparse weights gated by masks
+                        sparse_weights = np.multiply(mask_this_layer, weights )
+
+                        # weight-bias tuple
+                        sparse_params_this_layer = (sparse_weights, biases )
+
+                        sparse_params.append( sparse_params_this_layer )
+                    else:
+                        raise NotImplementedError
+                sparse_parmas.append(sparse_params)
 
     return sparse_params
 
@@ -250,12 +303,10 @@ def stax_params_l2_square(params, mask = None, regularize_bias_bool = False):
     
     if regularize_bias_bool == False:
         # assemble a list of weight parmeters; discard bias parameters
-        for subNN in params:
-            list_params = [layer_param[0] for layer_param in params[subNN] if len(layer_param) == 2 ]
+        list_params = [layer_param[0] for layer_param in params if len(layer_param) == 2 ]
     else:
-    # remove the empty tuple from the list of paramters.
-        for subNN in params:
-            list_params = list(sum(params[subNN], ()))
+        # remove the empty tuple from the list of paramters.
+        list_params = list(sum(params, ()))
     
     params_norm_squared = np.sum(np.array([ np.sum(np.square(list_params[i]))  for i in range(len(list_params)) ] ) )
             
