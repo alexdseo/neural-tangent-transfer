@@ -159,7 +159,7 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
             # In this the case, the layer does not contain weight and bias parameters.
             masks.append( [] )
             
-        elif len(params[layer_index]) == 2:
+        elif len(params[layer_index]) >= 2:
             # In this case, the layer contains a tuple of parameters for weights and biases
             
             weights = params[layer_index][0]
@@ -212,7 +212,7 @@ def get_sparse_params_filtered_by_masks(params, masks):
             # In this the case, the layer does not contain weight or bias parameters
             sparse_params.append( () )
             
-        elif len(params[layer_index]) == 2:
+        elif len(params[layer_index]) >= 2:
             # In this case, the layer contains a tuple of parameters for weights and biases
             weights  = params[layer_index][0]
             
@@ -250,7 +250,7 @@ def stax_params_l2_square(params, mask = None, regularize_bias_bool = False):
     
     if regularize_bias_bool == False:
         # assemble a list of weight parmeters; discard bias parameters 
-        list_params = [layer_param[0] for layer_param in params if len(layer_param) == 2 ]
+        list_params = [layer_param[0] for layer_param in params if len(layer_param) >= 2 ]
     else:
         # remove the empty tuple from the list of paramters.
         list_params = list(sum(params, ()))     
@@ -345,7 +345,7 @@ def get_snip_masks(params, nn_density_level, predict, snip_batch, batch_input_sh
 
     if GlOBAL_PRUNE_BOOL == True: # global pruning
 
-        cs = [abs( init_grads[idx][0] *  params[idx][0]).flatten() for idx in range(len(params)) if len(params[idx]) == 2 ]
+        cs = [abs( init_grads[idx][0] *  params[idx][0]).flatten() for idx in range(len(params)) if len(params[idx]) >= 2 ]
 
         pooled_cs = np.hstack(cs)
 
@@ -357,7 +357,7 @@ def get_snip_masks(params, nn_density_level, predict, snip_batch, batch_input_sh
         
     else: # layerwise pruning
         for layer_index in range( len(params)):
-            if len(params[layer_index]) == 2:
+            if len(params[layer_index]) >= 2:
 
                 cs = abs( init_grads[layer_index][0] *  params[layer_index][0]).flatten()
                 idx = int( (1 - nn_density_level) * len(cs) )
@@ -373,7 +373,7 @@ def get_snip_masks(params, nn_density_level, predict, snip_batch, batch_input_sh
             # In this the case, the layer does not contain weight and bias parameters.
             masks.append( [] )
 
-        elif len(params[layer_index]) == 2:
+        elif len(params[layer_index]) >= 2:
             # In this case, the layer contains a tuple of parameters for weights and biases
 
             weights = params[layer_index][0]
@@ -406,7 +406,7 @@ def get_logit_snip_masks(params, nn_density_level, predict, x_batch, batch_input
 
     if GlOBAL_PRUNE_BOOL == True: # global pruning
 
-        cs = [abs( init_grads[idx][0] *  params[idx][0]).flatten() for idx in range(len(params)) if len(params[idx]) == 2 ]
+        cs = [abs( init_grads[idx][0] *  params[idx][0]).flatten() for idx in range(len(params)) if len(params[idx]) >= 2 ]
 
         pooled_cs = np.hstack(cs)
 
@@ -418,7 +418,7 @@ def get_logit_snip_masks(params, nn_density_level, predict, x_batch, batch_input
         
     else: # layerwise pruning
         for layer_index in range( len(params)):
-            if len(params[layer_index]) == 2:
+            if len(params[layer_index]) >= 2:
 
                 cs = abs( init_grads[layer_index][0] *  params[layer_index][0]).flatten()
                 idx = int( (1 - nn_density_level) * len(cs) )
@@ -435,7 +435,7 @@ def get_logit_snip_masks(params, nn_density_level, predict, x_batch, batch_input
             # In this the case, the layer does not contain weight and bias parameters.
             masks.append( [] )
 
-        elif len(params[layer_index]) == 2:
+        elif len(params[layer_index]) >= 2:
             # In this case, the layer contains a tuple of parameters for weights and biases
 
             weights = params[layer_index][0]
