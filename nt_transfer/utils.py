@@ -153,6 +153,7 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
         global_thres = np.sort(weight_magnitudes_pooled)[idx]
     
     for subNN in range(len(params)):
+        print(len(params))
         for layer_index in range( len(params[subNN])):
             if len(params[subNN][layer_index]) < 2:
                 # In this the case, the layer does not contain weight and bias parameters.
@@ -161,7 +162,6 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
             elif len(params[subNN][layer_index]) == 10:
                 # In this case, the layer contains a tuple of parameters for weights and biases
 
-                print(len(params))
                 weights = params[subNN][layer_index][0]
 
                 weight_magnitudes = np.abs(weights)
