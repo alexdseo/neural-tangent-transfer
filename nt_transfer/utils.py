@@ -258,7 +258,7 @@ def get_sparse_params_filtered_by_masks(params, masks):
 
             biases = params[layer_index][1]
 
-            mask_this_layer = masks[layer_index+subNN+block+sub_layer]
+            mask_this_layer = masks[-layer_index]
 
             # sparse weights gated by masks
             sparse_weights = np.multiply(mask_this_layer, weights)
