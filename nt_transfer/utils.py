@@ -161,7 +161,7 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
             elif len(params[subNN][layer_index]) == 2:
                 # In this case, the layer contains a tuple of parameters for weights and biases
             
-                weights = params[subNN][layer_index][0]
+                weights = np.array(params[subNN][layer_index][0])
             
                 weight_magnitudes = np.abs(weights)
 
@@ -229,7 +229,7 @@ def get_sparse_params_filtered_by_masks(params, masks):
             else:
                 raise NotImplementedError
         sparse_parmas.append(sparse_params)
-        
+
     return sparse_params
 
 
