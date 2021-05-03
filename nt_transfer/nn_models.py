@@ -84,7 +84,8 @@ def gen_bann(output_units = 10, first_layer_width = 5, second_layer_width = 20, 
     )
 
     return stax.serial(
-    Additive,
+    CSB,
+    stax.Dropout(rate = 0.9),
     stax.Dense(output_units, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)))
 
 def gen_mlp_lenet_binary(W_initializers_str = 'glorot_normal()', b_initializers_str = 'normal()'):
