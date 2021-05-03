@@ -220,7 +220,7 @@ def get_masks_from_jax_params(params, nn_density_level, magnitude_base_bool = Tr
                             masks.append(this_mask )
 
                         else:
-                            print(len(params[layer_index][subNN][block]))
+                            print(len(params[layer_index][subNN][block][sub_layer]))
                             raise NotImplementedError
                     masks.append(masks)
                 masks.append(masks)
@@ -275,7 +275,7 @@ def get_sparse_params_filtered_by_masks(params, masks):
 
                             biases = params[layer_index][subNN][block][sub_layer][1]
 
-                            mask_this_layer = masks[layer_index][subNN][block][sub_layer]
+                            mask_this_layer = np.array(masks[layer_index][subNN][block][sub_layer])
 
                             # sparse weights gated by masks
                             sparse_weights = np.multiply(mask_this_layer, weights )
@@ -285,7 +285,7 @@ def get_sparse_params_filtered_by_masks(params, masks):
 
                             sparse_params.append( sparse_params_this_layer )
                         else:
-                            print(len(params[layer_index][subNN][block]))
+                            print(len(params[layer_index][subNN][block][sub_layer]))
                             raise NotImplementedError
                     sparse_params.append(sparse_params)
                 sparse_params.append(sparse_params)
