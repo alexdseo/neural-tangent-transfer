@@ -35,7 +35,7 @@ logger.addHandler(out_hdlr)
 
 
 class nt_transfer_model():
-    def __init__(self, dataset_str, model_str, instance_input_shape, NN_DENSITY_LEVEL_LIST, OPTIMIZER_STR, NUM_RUNS, NUM_EPOCHS, BATCH_SIZE, STEP_SIZE, MASK_UPDATE_FREQ, LAMBDA_KER_DIST, LAMBDA_L2_REG, MASK_UPDATE_BOOL = True, VALIDATION_FRACTION = 0.002, PRUNE_METHOD = 'magnitude', GLOBAL_PRUNE_BOOL = False, INIT_RUN_INDEX = 1, SAVE_BOOL = True, save_dir = '/content/neural-tangent-transfer/saved/ntt_results/' ):
+    def __init__(self, dataset_str, prof_model_str, model_str, instance_input_shape, NN_DENSITY_LEVEL_LIST, OPTIMIZER_STR, NUM_RUNS, NUM_EPOCHS, BATCH_SIZE, STEP_SIZE, MASK_UPDATE_FREQ, LAMBDA_KER_DIST, LAMBDA_L2_REG, MASK_UPDATE_BOOL = True, VALIDATION_FRACTION = 0.002, PRUNE_METHOD = 'magnitude', GLOBAL_PRUNE_BOOL = False, INIT_RUN_INDEX = 1, SAVE_BOOL = True, save_dir = '/content/neural-tangent-transfer/saved/ntt_results/' ):
         """ 
         Args: 
             # Model options    
@@ -64,7 +64,8 @@ class nt_transfer_model():
             save_dir: the data saving directory.
         """
         
-        self.model_str = model_str           
+        self.model_str = model_str
+        self.prof_model_str = prof_model_str
         self.NN_DENSITY_LEVEL_LIST = NN_DENSITY_LEVEL_LIST
         self.DATASET =  Dataset(datasource = dataset_str, VALIDATION_FRACTION = VALIDATION_FRACTION )        
         self.NUM_RUNS = NUM_RUNS
@@ -97,7 +98,8 @@ class nt_transfer_model():
 #         self.unique_model_dir =  save_dir + dataset_str + '_' + global_layerwise_str + '_' + self.model_str + '__' + now_str
         self.unique_model_dir =  save_dir + dataset_str + '_' + global_layerwise_str + '_' + self.model_str 
         
-        self.param_dict = dict(model_str = model_str, 
+        self.param_dict = dict(model_str = model_str,
+                               prof_model_str = prof_model_str
                                dataset_str = dataset_str, 
                                instance_input_shape = instance_input_shape,
                                NN_DENSITY_LEVEL_LIST = NN_DENSITY_LEVEL_LIST, 
@@ -120,6 +122,13 @@ class nt_transfer_model():
         self.init_fun = init_fun
         self.apply_fn = apply_fn
         self.emp_ntk_fn = empirical_ntk_fn(apply_fn)
+
+        # unpack the professor neural net architecture
+        prof_init_fun, prof_apply_fn = model_dict[prof_model_str](W_initializers_str='glorot_normal()', b_initializers_str='normal()')
+
+        self.prof_init_fun = prof_init_fun
+        self.prof_apply_fn = prof_apply_fn
+        self.prof_emp_ntk_fn = empirical_ntk_fn(prof_apply_fn)
         
         self.batch_input_shape = [-1] + instance_input_shape
     
@@ -132,7 +141,7 @@ class nt_transfer_model():
         self.vali_inputs_2 = self.vali_samples[half_vali_size:]
 
 
-    def kernel_dist_target_dist_l2_loss(self, student_ker_mat, student_pred, teacher_ker_mat, teacher_pred, masked_params):
+    def kernel_dist_target_dist_l2_loss(self, student_ker_mat, student_pred, teacher_ker_mat, teacher_pred, prof_ker_mat, prof_pred, masked_params):
 
         """ Compute kernel distance, target distance, and parameter l2 loss.
 
@@ -150,10 +159,12 @@ class nt_transfer_model():
         """ 
         
         # the normalized squared difference between teacher and student NTK matrices
-        ker_dist = np.sum(np.square(student_ker_mat - teacher_ker_mat)) / teacher_ker_mat.size
+        ker_dist = np.sum(np.square(student_ker_mat - prof_ker_mat)) / prof_ker_mat.size
+        #ker_dist = np.sum(np.square(student_ker_mat - teacher_ker_mat)) / teacher_ker_mat.size #t-s learning
 
         # the normalized squared difference between teacher and student network predictions
-        target_dist = np.sum(np.square(student_pred - teacher_pred)) / student_pred.size
+        target_dist = np.sum(np.square(student_pred - prof_pred)) / student_pred.size
+        #target_dist = np.sum(np.square(student_pred - teacher_pred)) / student_pred.size #t-s learning
 
         # squared norm of parameters
         params_norm_squared = stax_params_l2_square(masked_params)
@@ -161,7 +172,7 @@ class nt_transfer_model():
         return  ker_dist, target_dist, params_norm_squared 
     
         
-    def eval_nt_transfer_loss_on_vali_data(self, masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, density_level, key):
+    def eval_nt_transfer_loss_on_vali_data(self, masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, vali_prof_prediction, vali_prof_ntk_mat, density_level, key):
         """ Evaluate the ntk transfer loss using validation data.
          
          Args: 
@@ -183,7 +194,7 @@ class nt_transfer_model():
         vali_student_prediction = self.apply_fn(masked_student_net_params, self.vali_samples, rng=random.PRNGKey(key))
 
         # calculate the kernel distance, target distance, and parameter l2 loss
-        ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(vali_student_ntk_mat, vali_student_prediction, vali_teacher_ntk_mat, vali_teacher_prediction, masked_student_net_params )
+        ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(vali_student_ntk_mat, vali_student_prediction, vali_teacher_ntk_mat, vali_teacher_prediction, vali_prof_ntk_mat, vali_prof_prediction, masked_student_net_params )
         
         # weight these distances and sum them up.
         weighted_ker_dist = self.LAMBDA_KER_DIST * ker_dist
@@ -195,7 +206,7 @@ class nt_transfer_model():
         return transfer_loss, ker_dist, target_dist, param_squared_norm
 
 
-    def nt_transfer_loss(self, student_net_params, masks, teacher_net_params, x, density_level, key):
+    def nt_transfer_loss(self, student_net_params, masks, teacher_net_params, x, prof_net_params, density_level, key):
 
         """ The loss function of NTK transfer.
 
@@ -224,14 +235,20 @@ class nt_transfer_model():
         # teacher network prediction
         teacher_prediction = self.apply_fn(teacher_net_params, x, rng=random.PRNGKey(key))
 
+        # professor network prediction
+        prof_prediction = self.prof_apply_fn(prof_net_params, x, rng=random.PRNGKey(key))
+
         # student network's NTK evaluated on x1 and x2
         student_ntk_mat = self.emp_ntk_fn(x1, x2, masked_student_net_params, keys=random.PRNGKey(key))
 
         # teacher network's NTK evaluated on x1 and x2
         teacher_ntk_mat = self.emp_ntk_fn(x1, x2, teacher_net_params, keys=random.PRNGKey(key))
 
+        # professor network's NTK evaluated on x1 and x2
+        prof_ntk_mat = self.prof_emp_ntk_fn(x1, x2, prof_net_params, keys=random.PRNGKey(key))
+
         # compute kernel, target, and paramter l2 loss
-        ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(student_ntk_mat, student_prediction, teacher_ntk_mat, teacher_prediction, masked_student_net_params)
+        ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(student_ntk_mat, student_prediction, teacher_ntk_mat, teacher_prediction, prof_ntk_mat, prof_prediction, masked_student_net_params)
 
         # weight these losses to get the transfer loss
         transfer_loss = self.LAMBDA_KER_DIST * ker_dist +  target_dist + (self.LAMBDA_L2_REG / density_level) * param_squared_norm 
@@ -308,6 +325,7 @@ class nt_transfer_model():
 
                 # a string that summarizes the current ntt experiment
                 model_summary_str =  self.model_str + '_density_' + str(round(nn_density_level, 2) ) + '_run_' + str(run_index)
+                prof_model_summary_str = self.prof_model_str + '_density_' + str(round(nn_density_level, 2)) + '_run_' + str(run_index)
 
                 if self.SAVE_BOOL == True:
                     model_dir_density_run = trans_model_dir + '/' + 'density_' + str(round(nn_density_level, 2) ) + '/' + 'run_' +  str(run_index) + '/'
@@ -322,11 +340,14 @@ class nt_transfer_model():
                 
                 # for different run indices, randomly draw teacher net's parameters
                 _, teacher_net_params = self.init_fun(random.PRNGKey(run_index), tuple(self.batch_input_shape))
+                _, prof_net_params = self.prof_init_fun(random.PRNGKey(run_index), tuple(self.batch_input_shape))
                                 
                 # the prediction of the teacher net evaluated on validation samples
                 vali_teacher_prediction = self.apply_fn(teacher_net_params, self.vali_samples, rng=random.PRNGKey(run_index))
+                vali_prof_prediction = self.prof_apply_fn(prof_net_params, self.vali_samples, rng=random.PRNGKey(run_index))
 
                 vali_teacher_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, teacher_net_params, keys=random.PRNGKey(run_index))
+                vali_prof_ntk_mat = self.prof_emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, prof_net_params, keys=random.PRNGKey(run_index))
 
                 # the initial binary mask
                 
@@ -353,7 +374,8 @@ class nt_transfer_model():
                 # instantiate the optimizer triple 
                 opt_init, opt_update, get_params = self.OPTIMIZER_WITH_PARAMS
 
-                opt_state = opt_init(teacher_net_params) 
+                #opt_state = opt_init(teacher_net_params) #optimize toward teacher
+                opt_state = opt_init(prof_net_params) #optimize toward professor
 
                 # one step of NTK transfer
                 @jit
@@ -363,7 +385,7 @@ class nt_transfer_model():
                     student_net_params = get_params(opt_state)
 
                     # gradients that flow through the binary masks
-                    masked_g = grad(self.nt_transfer_loss)(student_net_params, masks, teacher_net_params, x, nn_density_level, key=run_index)
+                    masked_g = grad(self.nt_transfer_loss)(student_net_params, masks, teacher_net_params, x, prof_net_params, nn_density_level, key=run_index)
 
                     return opt_update(i, masked_g, opt_state)
 
@@ -371,7 +393,7 @@ class nt_transfer_model():
                 vali_loss_list = []
 
                 # calculate the initial validation loss. 
-                vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, nn_density_level, key=run_index)
+                vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, vali_prof_prediction, vali_prof_ntk_mat, nn_density_level, key=run_index)
 
                 vali_loss_list.append(vali_loss)
 
@@ -409,7 +431,7 @@ class nt_transfer_model():
                         masked_student_net_params = get_sparse_params_filtered_by_masks(student_net_params , masks)
                         
                         # validation loss
-                        vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, nn_density_level, key=run_index)
+                        vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, vali_prof_prediction, vali_prof_ntk_mat, nn_density_level, key=run_index)
 
                         vali_loss_list.append(vali_loss)
 
@@ -439,7 +461,7 @@ class nt_transfer_model():
                 # filter the paramters by masks
                 masked_student_net_params = get_sparse_params_filtered_by_masks(student_net_params , masks)
                 
-                vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, nn_density_level, key=run_index)
+                vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, vali_prof_prediction, vali_prof_ntk_mat, nn_density_level, key=run_index)
 
                 vali_loss_list.append(vali_loss)
                 
@@ -455,6 +477,10 @@ class nt_transfer_model():
                 if self.SAVE_BOOL == True:
 
                     model_summary_str =  self.model_str + '_density_' + str(round(nn_density_level, 2) ) + '_run_' + str(run_index)
+                    prof_model_summary_str = self.prof_model_str + '_density_' + str(round(nn_density_level, 2)) + '_run_' + str(run_index)
+
+                    prof_param_fileName = model_dir_density_run + 'prof_params_' + prof_model_summary_str
+                    np.save(prof_param_fileName, prof_net_params)
 
                     teacher_param_fileName = model_dir_density_run + 'teacher_params_' + model_summary_str
                     np.save(teacher_param_fileName, teacher_net_params)
