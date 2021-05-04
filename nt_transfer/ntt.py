@@ -99,7 +99,7 @@ class nt_transfer_model():
         self.unique_model_dir =  save_dir + dataset_str + '_' + global_layerwise_str + '_' + self.model_str 
         
         self.param_dict = dict(model_str = model_str,
-                               prof_model_str = prof_model_str
+                               prof_model_str = prof_model_str,
                                dataset_str = dataset_str, 
                                instance_input_shape = instance_input_shape,
                                NN_DENSITY_LEVEL_LIST = NN_DENSITY_LEVEL_LIST, 
