@@ -374,8 +374,8 @@ class nt_transfer_model():
                 # instantiate the optimizer triple 
                 opt_init, opt_update, get_params = self.OPTIMIZER_WITH_PARAMS
 
-                #opt_state = opt_init(teacher_net_params) #optimize toward teacher
-                opt_state = opt_init(prof_net_params) #optimize toward professor
+                opt_state = opt_init(teacher_net_params) #optimize toward teacher
+                #opt_state = opt_init(prof_net_params) #optimize toward professor
 
                 # one step of NTK transfer
                 @jit
