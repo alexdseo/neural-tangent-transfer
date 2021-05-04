@@ -13,7 +13,7 @@ plt.rc('xtick', labelsize= 8)
 plt.rc('ytick', labelsize= 8)
 plt.rc('axes', labelsize= 8)
 plt.rcParams.update({'font.size': 8})
-plt.rc('text.latex', preamble=r'\usepackage{cmbright}')
+#plt.rc('text.latex', preamble=r'\usepackage{cmbright}')
 
 plt.rcParams['xtick.major.pad'] = '2'
 plt.rcParams['ytick.major.pad'] = '1.2'
