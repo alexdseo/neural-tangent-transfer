@@ -35,7 +35,7 @@ logger.addHandler(out_hdlr)
 
 
 class nt_transfer_model():
-    def __init__(self, dataset_str, prof_model_str, model_str, instance_input_shape, NN_DENSITY_LEVEL_LIST, OPTIMIZER_STR, NUM_RUNS, NUM_EPOCHS, BATCH_SIZE, STEP_SIZE, MASK_UPDATE_FREQ, LAMBDA_KER_DIST, LAMBDA_L2_REG, MASK_UPDATE_BOOL = True, VALIDATION_FRACTION = 0.002, PRUNE_METHOD = 'magnitude', GLOBAL_PRUNE_BOOL = False, INIT_RUN_INDEX = 1, SAVE_BOOL = True, save_dir = '/content/neural-tangent-transfer/saved/ntt_results/' ):
+    def __init__(self, dataset_str, prof_model_str, model_str, instance_input_shape, prof_input_shape, NN_DENSITY_LEVEL_LIST, OPTIMIZER_STR, NUM_RUNS, NUM_EPOCHS, BATCH_SIZE, STEP_SIZE, MASK_UPDATE_FREQ, LAMBDA_KER_DIST, LAMBDA_L2_REG, MASK_UPDATE_BOOL = True, VALIDATION_FRACTION = 0.002, PRUNE_METHOD = 'magnitude', GLOBAL_PRUNE_BOOL = False, INIT_RUN_INDEX = 1, SAVE_BOOL = True, save_dir = '/content/neural-tangent-transfer/saved/ntt_results/' ):
         """ 
         Args: 
             # Model options    
@@ -102,6 +102,7 @@ class nt_transfer_model():
                                prof_model_str = prof_model_str,
                                dataset_str = dataset_str, 
                                instance_input_shape = instance_input_shape,
+                               prof_input_shape = prof_input_shape
                                NN_DENSITY_LEVEL_LIST = NN_DENSITY_LEVEL_LIST, 
                                OPTIMIZER_STR = OPTIMIZER_STR,
                                NUM_RUNS = NUM_RUNS, 
@@ -131,14 +132,21 @@ class nt_transfer_model():
         self.prof_emp_ntk_fn = empirical_ntk_fn(prof_apply_fn)
         
         self.batch_input_shape = [-1] + instance_input_shape
+        self.prof_batch_input_shape = [-1] + prof_input_shape
     
 
         self.vali_samples = self.DATASET.dataset['val']['input'][:self.BATCH_SIZE, :].reshape(self.batch_input_shape)
+        self.prof_vali_samples = self.DATASET.dataset['val']['input'][:self.BATCH_SIZE, :].reshape(self.prof_batch_input_shape)
 
         # split validation inputs into two collections, vali_inputs_1 and vali_inputs_2.
         half_vali_size = int(len(self.vali_samples)/2)
         self.vali_inputs_1 = self.vali_samples[:half_vali_size]
         self.vali_inputs_2 = self.vali_samples[half_vali_size:]
+
+        # split validation inputs into two collections, vali_inputs_1 and vali_inputs_2 for professor net with different input
+        prof_half_vali_size = int(len(self.prof_vali_samples) / 2)
+        self.prof_vali_inputs_1 = self.prof_vali_samples[:prof_half_vali_size]
+        self.prof_vali_inputs_2 = self.prof_vali_samples[prof_half_vali_size:]
 
 
     def kernel_dist_target_dist_l2_loss(self, student_ker_mat, student_pred, teacher_ker_mat, teacher_pred, prof_ker_mat, prof_pred, masked_params):
@@ -206,7 +214,7 @@ class nt_transfer_model():
         return transfer_loss, ker_dist, target_dist, param_squared_norm
 
 
-    def nt_transfer_loss(self, student_net_params, masks, teacher_net_params, x, prof_net_params, density_level, key):
+    def nt_transfer_loss(self, student_net_params, masks, teacher_net_params, x, prof_x, prof_net_params, density_level, key):
 
         """ The loss function of NTK transfer.
 
@@ -228,6 +236,10 @@ class nt_transfer_model():
         # split inputs into two collections, x1 and x2.
         x1 = x[:int(len(x)/2)]
         x2 = x[int(len(x)/2):]
+
+        # split input into two collection for professor batch
+        prof_x1 = prof_x[:int(len(prof_x) / 2)]
+        prof_x2 = prof_x[int(len(prof_x) / 2):]
         
         # student network prediction
         student_prediction = self.apply_fn(masked_student_net_params, x, rng=random.PRNGKey(key))
@@ -236,7 +248,7 @@ class nt_transfer_model():
         teacher_prediction = self.apply_fn(teacher_net_params, x, rng=random.PRNGKey(key))
 
         # professor network prediction
-        prof_prediction = self.prof_apply_fn(prof_net_params, x, rng=random.PRNGKey(key))
+        prof_prediction = self.prof_apply_fn(prof_net_params, prof_x, rng=random.PRNGKey(key))
 
         # student network's NTK evaluated on x1 and x2
         student_ntk_mat = self.emp_ntk_fn(x1, x2, masked_student_net_params, keys=random.PRNGKey(key))
@@ -245,7 +257,7 @@ class nt_transfer_model():
         teacher_ntk_mat = self.emp_ntk_fn(x1, x2, teacher_net_params, keys=random.PRNGKey(key))
 
         # professor network's NTK evaluated on x1 and x2
-        prof_ntk_mat = self.prof_emp_ntk_fn(x1, x2, prof_net_params, keys=random.PRNGKey(key))
+        prof_ntk_mat = self.prof_emp_ntk_fn(prof_x1, prof_x2, prof_net_params, keys=random.PRNGKey(key))
 
         # compute kernel, target, and paramter l2 loss
         ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(student_ntk_mat, student_prediction, teacher_ntk_mat, teacher_prediction, prof_ntk_mat, prof_prediction, masked_student_net_params)
@@ -340,14 +352,14 @@ class nt_transfer_model():
                 
                 # for different run indices, randomly draw teacher net's parameters
                 _, teacher_net_params = self.init_fun(random.PRNGKey(run_index), tuple(self.batch_input_shape))
-                _, prof_net_params = self.prof_init_fun(random.PRNGKey(run_index), tuple(self.batch_input_shape))
+                _, prof_net_params = self.prof_init_fun(random.PRNGKey(run_index), tuple(self.prof_batch_input_shape))
                                 
                 # the prediction of the teacher net evaluated on validation samples
                 vali_teacher_prediction = self.apply_fn(teacher_net_params, self.vali_samples, rng=random.PRNGKey(run_index))
-                vali_prof_prediction = self.prof_apply_fn(prof_net_params, self.vali_samples, rng=random.PRNGKey(run_index))
+                vali_prof_prediction = self.prof_apply_fn(prof_net_params, self.prof_vali_samples, rng=random.PRNGKey(run_index))
 
                 vali_teacher_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, teacher_net_params, keys=random.PRNGKey(run_index))
-                vali_prof_ntk_mat = self.prof_emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, prof_net_params, keys=random.PRNGKey(run_index))
+                vali_prof_ntk_mat = self.prof_emp_ntk_fn(self.prof_vali_inputs_1, self.prof_vali_inputs_2, prof_net_params, keys=random.PRNGKey(run_index))
 
                 # the initial binary mask
                 
@@ -379,13 +391,13 @@ class nt_transfer_model():
 
                 # one step of NTK transfer
                 @jit
-                def nt_transfer_step(i, opt_state, x, masks):
+                def nt_transfer_step(i, opt_state, x, prof_x, masks):
 
                     # parameters in the current optimizer state
                     student_net_params = get_params(opt_state)
 
                     # gradients that flow through the binary masks
-                    masked_g = grad(self.nt_transfer_loss)(student_net_params, masks, teacher_net_params, x, prof_net_params, nn_density_level, key=run_index)
+                    masked_g = grad(self.nt_transfer_loss)(student_net_params, masks, teacher_net_params, x, prof_x, prof_net_params, nn_density_level, key=run_index)
 
                     return opt_update(i, masked_g, opt_state)
 
@@ -409,10 +421,11 @@ class nt_transfer_model():
                     batch_xs, _ = next(gen_batches)                
 
                     # reshape the input to a proper format (2d array for MLP and 3d for CNN)
-                    batch_xs = batch_xs.reshape(self.batch_input_shape) 
+                    batch_xs = batch_xs.reshape(self.batch_input_shape)
+                    prof_batch_xs = batch_xs.reshape(self.prof_batch_input_shape)
 
                     # update the optimizer state
-                    opt_state = nt_transfer_step(next(itercount), opt_state, batch_xs, masks )
+                    opt_state = nt_transfer_step(next(itercount), opt_state, batch_xs, prof_batch_xs, masks )
 
 
                     if num_iter % 100 == 0:
