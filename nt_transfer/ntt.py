@@ -102,7 +102,7 @@ class nt_transfer_model():
                                prof_model_str = prof_model_str,
                                dataset_str = dataset_str, 
                                instance_input_shape = instance_input_shape,
-                               prof_input_shape = prof_input_shape
+                               prof_input_shape = prof_input_shape,
                                NN_DENSITY_LEVEL_LIST = NN_DENSITY_LEVEL_LIST, 
                                OPTIMIZER_STR = OPTIMIZER_STR,
                                NUM_RUNS = NUM_RUNS, 
