@@ -149,7 +149,7 @@ class nt_transfer_model():
         self.prof_vali_inputs_2 = self.prof_vali_samples[prof_half_vali_size:]
 
 
-    def kernel_dist_target_dist_l2_loss(self, student_ker_mat, student_pred, teacher_ker_mat, teacher_pred, prof_ker_mat, prof_pred, masked_params):
+    def kernel_dist_target_dist_l2_loss(self, student_ker_mat, student_pred, prof_ker_mat, prof_pred, masked_params):
 
         """ Compute kernel distance, target distance, and parameter l2 loss.
 
@@ -180,7 +180,7 @@ class nt_transfer_model():
         return  ker_dist, target_dist, params_norm_squared 
     
         
-    def eval_nt_transfer_loss_on_vali_data(self, masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, vali_prof_prediction, vali_prof_ntk_mat, density_level, key):
+    def eval_nt_transfer_loss_on_vali_data(self, masked_student_net_params, vali_prof_prediction, vali_prof_ntk_mat, density_level, key):
         """ Evaluate the ntk transfer loss using validation data.
          
          Args: 
@@ -202,7 +202,7 @@ class nt_transfer_model():
         vali_student_prediction = self.apply_fn(masked_student_net_params, self.vali_samples, rng=random.PRNGKey(key))
 
         # calculate the kernel distance, target distance, and parameter l2 loss
-        ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(vali_student_ntk_mat, vali_student_prediction, vali_teacher_ntk_mat, vali_teacher_prediction, vali_prof_ntk_mat, vali_prof_prediction, masked_student_net_params )
+        ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(vali_student_ntk_mat, vali_student_prediction, vali_prof_ntk_mat, vali_prof_prediction, masked_student_net_params )
         
         # weight these distances and sum them up.
         weighted_ker_dist = self.LAMBDA_KER_DIST * ker_dist
@@ -245,7 +245,7 @@ class nt_transfer_model():
         student_prediction = self.apply_fn(masked_student_net_params, x, rng=random.PRNGKey(key))
         
         # teacher network prediction
-        teacher_prediction = self.apply_fn(teacher_net_params, x, rng=random.PRNGKey(key))
+        #teacher_prediction = self.apply_fn(teacher_net_params, x, rng=random.PRNGKey(key))
 
         # professor network prediction
         prof_prediction = self.prof_apply_fn(prof_net_params, prof_x, rng=random.PRNGKey(key))
@@ -254,13 +254,13 @@ class nt_transfer_model():
         student_ntk_mat = self.emp_ntk_fn(x1, x2, masked_student_net_params, keys=random.PRNGKey(key))
 
         # teacher network's NTK evaluated on x1 and x2
-        teacher_ntk_mat = self.emp_ntk_fn(x1, x2, teacher_net_params, keys=random.PRNGKey(key))
+        #teacher_ntk_mat = self.emp_ntk_fn(x1, x2, teacher_net_params, keys=random.PRNGKey(key))
 
         # professor network's NTK evaluated on x1 and x2
         prof_ntk_mat = self.prof_emp_ntk_fn(prof_x1, prof_x2, prof_net_params, keys=random.PRNGKey(key))
 
         # compute kernel, target, and paramter l2 loss
-        ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(student_ntk_mat, student_prediction, teacher_ntk_mat, teacher_prediction, prof_ntk_mat, prof_prediction, masked_student_net_params)
+        ker_dist, target_dist, param_squared_norm = self.kernel_dist_target_dist_l2_loss(student_ntk_mat, student_prediction, prof_ntk_mat, prof_prediction, masked_student_net_params)
 
         # weight these losses to get the transfer loss
         transfer_loss = self.LAMBDA_KER_DIST * ker_dist +  target_dist + (self.LAMBDA_L2_REG / density_level) * param_squared_norm 
@@ -355,10 +355,10 @@ class nt_transfer_model():
                 _, prof_net_params = self.prof_init_fun(random.PRNGKey(run_index), tuple(self.prof_batch_input_shape))
                                 
                 # the prediction of the teacher net evaluated on validation samples
-                vali_teacher_prediction = self.apply_fn(teacher_net_params, self.vali_samples, rng=random.PRNGKey(run_index))
+                #vali_teacher_prediction = self.apply_fn(teacher_net_params, self.vali_samples, rng=random.PRNGKey(run_index))
                 vali_prof_prediction = self.prof_apply_fn(prof_net_params, self.prof_vali_samples, rng=random.PRNGKey(run_index))
 
-                vali_teacher_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, teacher_net_params, keys=random.PRNGKey(run_index))
+                #vali_teacher_ntk_mat = self.emp_ntk_fn(self.vali_inputs_1, self.vali_inputs_2, teacher_net_params, keys=random.PRNGKey(run_index))
                 vali_prof_ntk_mat = self.prof_emp_ntk_fn(self.prof_vali_inputs_1, self.prof_vali_inputs_2, prof_net_params, keys=random.PRNGKey(run_index))
 
                 # the initial binary mask
@@ -405,7 +405,7 @@ class nt_transfer_model():
                 vali_loss_list = []
 
                 # calculate the initial validation loss. 
-                vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, vali_prof_prediction, vali_prof_ntk_mat, nn_density_level, key=run_index)
+                vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_prof_prediction, vali_prof_ntk_mat, nn_density_level, key=run_index)
 
                 vali_loss_list.append(vali_loss)
 
@@ -444,7 +444,7 @@ class nt_transfer_model():
                         masked_student_net_params = get_sparse_params_filtered_by_masks(student_net_params , masks)
                         
                         # validation loss
-                        vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, vali_prof_prediction, vali_prof_ntk_mat, nn_density_level, key=run_index)
+                        vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_prof_prediction, vali_prof_ntk_mat, nn_density_level, key=run_index)
 
                         vali_loss_list.append(vali_loss)
 
@@ -474,7 +474,7 @@ class nt_transfer_model():
                 # filter the paramters by masks
                 masked_student_net_params = get_sparse_params_filtered_by_masks(student_net_params , masks)
                 
-                vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_teacher_prediction, vali_teacher_ntk_mat, vali_prof_prediction, vali_prof_ntk_mat, nn_density_level, key=run_index)
+                vali_loss = self.eval_nt_transfer_loss_on_vali_data(masked_student_net_params, vali_prof_prediction, vali_prof_ntk_mat, nn_density_level, key=run_index)
 
                 vali_loss_list.append(vali_loss)
                 
