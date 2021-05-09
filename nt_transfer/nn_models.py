@@ -27,42 +27,42 @@ def gen_bann(output_units = 10, mode = 'test', first_layer_width = 5, second_lay
             stax.serial(
                 stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
                 stax.Dense(3 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
-                stax.Dropout(rate = 0.9, mode = mode)
+                stax.Dropout(rate = 0.8, mode = mode)
             ),
             stax.serial(
                 stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
                 stax.Dense(4 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
-                stax.Dropout(rate = 0.9, mode = mode)
+                stax.Dropout(rate = 0.8, mode = mode)
             ),
             stax.serial(
                 stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
                 stax.Dense(5 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
-                stax.Dropout(rate = 0.9, mode = mode)
+                stax.Dropout(rate = 0.7, mode = mode)
             ),
             stax.serial(
                 stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
                 stax.Dense(6 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
-                stax.Dropout(rate = 0.9, mode = mode)
+                stax.Dropout(rate = 0.7, mode = mode)
             ),
             stax.serial(
                 stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
                 stax.Dense(7 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
-                stax.Dropout(rate = 0.9, mode = mode)
+                stax.Dropout(rate = 0.6, mode = mode)
             ),
             stax.serial(
                 stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
                 stax.Dense(8 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
-                stax.Dropout(rate = 0.9, mode = mode)
+                stax.Dropout(rate = 0.6, mode = mode)
             ),
             stax.serial(
                 stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
                 stax.Dense(9 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
-                stax.Dropout(rate = 0.9, mode = mode)
+                stax.Dropout(rate = 0.5, mode = mode)
             ),
             stax.serial(
                 stax.Dense(first_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
                 stax.Dense(10 * second_layer_width, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
-                stax.Dropout(rate = 0.9, mode = mode)
+                stax.Dropout(rate = 0.5, mode = mode)
             )
         ),
         stax.FanInConcat()
