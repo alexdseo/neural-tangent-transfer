@@ -1,4 +1,4 @@
-from jax.api import jit, grad, eval_shape, jacobian, jvp, vjp
+from jax import jit, grad, eval_shape, jacobian, jvp, vjp
 
 import jax.numpy as np
 
