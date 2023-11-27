@@ -9,7 +9,7 @@ def gen_mlp_lenet(output_units = 10, W_initializers_str = 'glorot_normal()', b_i
     stax.Dense(100, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)), stax.Relu,
     stax.Dense(output_units, W_init= eval(W_initializers_str), b_init= eval(b_initializers_str)))
 
-def gen_bann(output_units = 10, mode = 'test', first_layer_width = 5, second_layer_width = 20, W_initializers_str = 'glorot_normal()', b_initializers_str = 'normal()'):
+def gen_bann(output_units = 10, mode = 'test', first_layer_width = 512, second_layer_width = 256, W_initializers_str = 'glorot_normal()', b_initializers_str = 'normal()'):
     """ This is a modern variant of the lenet with relu activation """
     CSB = stax.serial(
         stax.FanOut(10),
