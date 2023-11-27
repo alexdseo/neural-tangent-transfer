@@ -3,7 +3,7 @@ import itertools
 
 import os
 
-from jax.api import jit, grad
+from jax import jit, grad
 
 import jax.numpy as np
 
